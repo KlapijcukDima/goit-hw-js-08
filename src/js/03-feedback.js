@@ -1,37 +1,46 @@
-import throttle from 'lodash.throttle';
+import _throttle from 'lodash.throttle';
+const formEl = document.querySelector('.feedback-form');
+const LOCAL_STORAGE_KEY = 'feedback-form-state';
 
-const LOCAL_KEY = 'feedback-form-state';
+let data = {};
 
-form = document.querySelector('.feedback-form');
+loadForm();
 
-form.addEventListener('input', throttle(onInputData, 500));
-form.addEventListener('submit', onFormSubmit);
+formEl.addEventListener('input', _throttle(onSaveFormInput, 500));
 
-let dataForm = JSON.parse(localStorage.getItem(LOCAL_KEY)) || {};
-const { email, message } = form.elements;
-reloadPage();
+formEl.addEventListener('submit', onFormSubmit);
 
-function onInputData(e) {
-  dataForm = { email: email.value, message: message.value };
-  localStorage.setItem(LOCAL_KEY, JSON.stringify(dataForm));
+function onSaveFormInput(event) {
+  data = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY)) || {};
+
+  data[event.target.name] = event.target.value;
+
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
 }
 
-function reloadPage() {
-  if (dataForm) {
-    email.value = dataForm.email || '';
-    message.value = dataForm.message || '';
+function onFormSubmit(event) {
+  event.preventDefault();
+  if (!event.target.email.value || !event.target.message.value) {
+    alert('Enter all data');
+    return;
   }
+
+  event.target.reset();
+  console.log(data);
+  localStorage.removeItem(LOCAL_STORAGE_KEY);
 }
 
-function onFormSubmit(e) {
-  e.preventDefault();
-  console.log({ email: email.value, message: message.value });
+function loadForm() {
+  try {
+    let formLoad = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
+    if (!formLoad) {
+      return;
+    }
 
-  if (email.value === '' || message.value === '') {
-    return alert('Please fill in all the fields!');
+    data = formLoad;
+    formEl.email.value = data.email || '';
+    formEl.message.value = data.message || '';
+  } catch (error) {
+    console.error('Error.message ', error.message);
   }
-
-  localStorage.removeItem(LOCAL_KEY);
-  e.currentTarget.reset();
-  dataForm = {};
 }
